@@ -1,0 +1,133 @@
+# Namespace + FederatedNamespace for the multicloud-demo app
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: multicloud-demo
+  labels:
+    istio-injection: "enabled"   # Safe even if Istio is not installed yet
+---
+apiVersion: types.kubefed.io/v1beta1
+kind: FederatedNamespace
+metadata:
+  name: multicloud-demo
+  namespace: multicloud-demo
+spec:
+  placement:
+    clusters:
+      - name: aws-us-east-1
+      - name: gcp-europe-west1
+
+# FederatedDeployment for the multicloud-demo app
+# - Deploys the same application in all clusters
+# - Overrides REGION env var and replica count per cluster
+---
+apiVersion: types.kubefed.io/v1beta1
+kind: FederatedDeployment
+metadata:
+  name: multicloud-demo
+  namespace: multicloud-demo
+spec:
+  template:
+    metadata:
+      labels:
+        app: multicloud-demo
+    spec:
+      replicas: 2
+      selector:
+        matchLabels:
+          app: multicloud-demo
+      template:
+        metadata:
+          labels:
+            app: multicloud-demo
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+          containers:
+            - name: app
+              image: ghcr.io/tu-org/multicloud-demo:1.0.0   # <-- change to your image
+              imagePullPolicy: IfNotPresent
+              ports:
+                - containerPort: 8080
+                  name: http
+              env:
+                - name: REGION
+                  value: "default-region"
+                - name: POD_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+              readinessProbe:
+                httpGet:
+                  path: /readyz
+                  port: 8080
+                initialDelaySeconds: 5
+                periodSeconds: 10
+                timeoutSeconds: 1
+              livenessProbe:
+                httpGet:
+                  path: /healthz
+                  port: 8080
+                initialDelaySeconds: 15
+                periodSeconds: 20
+                timeoutSeconds: 1
+              resources:
+                requests:
+                  cpu: "50m"
+                  memory: "64Mi"
+                limits:
+                  cpu: "200m"
+                  memory: "128Mi"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+
+  placement:
+    clusters:
+      - name: aws-us-east-1
+      - name: gcp-europe-west1
+
+  overrides:
+    - clusterName: aws-us-east-1
+      clusterOverrides:
+        - path: "/spec/replicas"
+          value: 3
+        - path: "/spec/template/spec/containers/0/env/0/value"
+          value: "us-east-1"
+    - clusterName: gcp-europe-west1
+      clusterOverrides:
+        - path: "/spec/replicas"
+          value: 2
+        - path: "/spec/template/spec/containers/0/env/0/value"
+          value: "europe-west1"
+
+# FederatedService for the multicloud-demo app
+---
+apiVersion: types.kubefed.io/v1beta1
+kind: FederatedService
+metadata:
+  name: multicloud-demo
+  namespace: multicloud-demo
+spec:
+  template:
+    metadata:
+      labels:
+        app: multicloud-demo
+    spec:
+      selector:
+        app: multicloud-demo
+      ports:
+        - name: http
+          port: 80
+          targetPort: 8080
+      type: ClusterIP
+  placement:
+    clusters:
+      - name: aws-us-east-1
+      - name: gcp-europe-west1

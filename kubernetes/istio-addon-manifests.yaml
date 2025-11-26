@@ -1,0 +1,68 @@
+# Istio mTLS add-on for the multicloud-demo namespace
+
+# 1. PeerAuthentication: enforce mTLS STRICT in multicloud-demo namespace
+---
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: multicloud-demo
+spec:
+  mtls:
+    mode: STRICT
+
+# 2. DestinationRule: use ISTIO_MUTUAL for the multicloud-demo service
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: multicloud-demo
+  namespace: multicloud-demo
+spec:
+  host: multicloud-demo.multicloud-demo.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+
+# 3. Gateway: HTTPS entrypoint for demo.multicloud.example.com
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: multicloud-demo-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: multicloud-demo-tls   # Secret in istio-system
+      hosts:
+        - demo.multicloud.example.com         # Change to your desired host
+
+# 4. VirtualService: route HTTPS traffic to the multicloud-demo Service
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: multicloud-demo
+  namespace: multicloud-demo
+spec:
+  hosts:
+    - demo.multicloud.example.com
+  gateways:
+    - istio-system/multicloud-demo-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "/"
+      route:
+        - destination:
+            host: multicloud-demo.multicloud-demo.svc.cluster.local
+            port:
+              number: 80

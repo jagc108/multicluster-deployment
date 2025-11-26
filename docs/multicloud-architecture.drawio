@@ -1,0 +1,83 @@
+<mxfile host="app.diagrams.net" modified="2025-11-25T00:00:00Z" agent="ChatGPT" version="22.0.0" editor="diagramly">
+  <diagram id="multicloud-arch" name="Multicloud Architecture">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- AWS Cluster group -->
+        <mxCell id="awsCluster" value="AWS EKS (us-east-1)" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="80" width="420" height="260" as="geometry"/>
+        </mxCell>
+
+        <!-- GCP Cluster group -->
+        <mxCell id="gcpCluster" value="GCP GKE (europe-west1)" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeLast=0;collapsible=1;" vertex="1" parent="1">
+          <mxGeometry x="520" y="80" width="420" height="260" as="geometry"/>
+        </mxCell>
+
+        <!-- AWS K8s icon (EC2 or EKS node) -->
+        <mxCell id="awsK8s" value="EKS Cluster" style="shape=mxgraph.aws3.container;html=1;gradientColor=none;align=center;verticalAlign=middle;imageAlign=center;imageVerticalAlign=middle;" vertex="1" parent="awsCluster">
+          <mxGeometry x="40" y="50" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- AWS app -->
+        <mxCell id="awsApp" value="multicloud-demo Pods" style="shape=mxgraph.aws3.ec2;html=1;gradientColor=none;align=center;verticalAlign=middle;" vertex="1" parent="awsCluster">
+          <mxGeometry x="220" y="50" width="140" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- GCP K8s icon -->
+        <mxCell id="gcpK8s" value="GKE Cluster" style="shape=mxgraph.gcp.compute_engine;html=1;gradientColor=none;align=center;verticalAlign=middle;" vertex="1" parent="gcpCluster">
+          <mxGeometry x="40" y="50" width="120" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- GCP app -->
+        <mxCell id="gcpApp" value="multicloud-demo Pods" style="shape=mxgraph.gcp.kubernetes_engine;html=1;gradientColor=none;align=center;verticalAlign=middle;" vertex="1" parent="gcpCluster">
+          <mxGeometry x="220" y="50" width="140" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- KubeFed control plane -->
+        <mxCell id="kubefed" value="KubeFed Control Plane (Host Cluster)" style="shape=process;whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="260" y="380" width="380" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrows from KubeFed to clusters -->
+        <mxCell id="edgeKubefedAws" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="kubefed" target="awsCluster">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeKubefedGcp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="kubefed" target="gcpCluster">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Optional Istio Ingress Gateways -->
+        <mxCell id="awsIstio" value="Istio Ingress Gateway" style="shape=mxgraph.kubernetes.gateway;html=1;gradientColor=none;align=center;verticalAlign=middle;" vertex="1" parent="awsCluster">
+          <mxGeometry x="120" y="150" width="180" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gcpIstio" value="Istio Ingress Gateway" style="shape=mxgraph.kubernetes.gateway;html=1;gradientColor=none;align=center;verticalAlign=middle;" vertex="1" parent="gcpCluster">
+          <mxGeometry x="120" y="150" width="180" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Client -->
+        <mxCell id="client" value="Client / Browser" style="shape=mxgraph.mscae.user;html=1;gradientColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="260" y="10" width="120" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- DNS / Route 53 -->
+        <mxCell id="dns" value="Global DNS / Route 53" style="shape=mxgraph.aws3.route_53;html=1;gradientColor=none;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="420" y="10" width="150" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Edges client -> DNS -> clusters -->
+        <mxCell id="edgeClientDns" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="client" target="dns">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeDnsAws" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="dns" target="awsIstio">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeDnsGcp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="dns" target="gcpIstio">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
